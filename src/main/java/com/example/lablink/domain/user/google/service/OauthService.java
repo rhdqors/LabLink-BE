@@ -32,13 +32,13 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 public class OauthService {
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
-    private String CLIENT_ID;
+    private String clientId;
 
     @Value("${spring.security.oauth2.client.registration.google.client-secret}")
-    private String CLIENT_SECRET;
+    private String clientSecret;
 
-//    @Value("${spring.security.oauth2.client.registration.google.redirect-uri}")
-//    private String REDIRECT_URI;
+    @Value("${spring.security.oauth2.client.registration.google.redirect-uri}")
+    private String redirectUri;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -49,10 +49,7 @@ public class OauthService {
         // 인가코드는 일회성 그리고 짧은 시간내에 사용되어야함
         String accessToken = getToken(code, scope);
 
-        // 2. 토큰으로 카카오 API 호출 : "액세스 토큰"으로 "카카오 사용자 정보" 가져오기
-        // 액세스 토큰 서비스 제공자(카카오) api 호출할 떄 사용하는 인증 수단
-        // 액세스 토큰으로 추가 정보를 요청할 수 있고 이용자의 동의를 얻은 기능 실행 가능(친구목록, 메시지 전송, 프로필가져오기 등??)
-        // 액세스 토큰 만료시 리프레시토큰으로 새로 발급
+        // 2. 토큰으로 Google API 호출 : "액세스 토큰"으로 "Google 사용자 정보" 가져오기
         GoogleUserInfoDto googleUserInfo = getGoogleUserInfo(accessToken);
 
         // 3. 필요시에 회원가입
@@ -75,13 +72,9 @@ public class OauthService {
         // HTTP Body 생성
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("grant_type", "authorization_code");
-//        body.add("client_id", "1037318704574-3hujk7ftivb5rhd49tha2mjpcv71edcs.apps.googleusercontent.com");
-//        body.add("client_secret", "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");
-        body.add("client_id", CLIENT_ID);
-        body.add("client_secret", CLIENT_SECRET);
-//        body.add("redirect_uri", "http://localhost:8080/auth/google/callback");
-//        body.add("redirect_uri", "http://localhost:8080/users/google/login");
-        body.add("redirect_uri", "http://localhost:3000/users/google/login");
+        body.add("client_id", clientId);
+        body.add("client_secret", clientSecret);
+        body.add("redirect_uri", redirectUri);
         body.add("scope", scope);
         body.add("code", code);
 
@@ -102,12 +95,12 @@ public class OauthService {
         String responseBody = response.getBody();
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(responseBody);
-        System.out.println("___________________________responsebody" + responseBody);
-        System.out.println("+++++++++++++++++++++++++json node" + jsonNode);
+        log.debug("Google OAuth response body: {}", responseBody);
+        log.debug("Google OAuth json node: {}", jsonNode);
         return jsonNode.get("access_token").asText();
     }
 
-    // 2. 토큰으로 카카오 API 호출 : "액세스 토큰"으로 "카카오 사용자 정보" 가져오기
+    // 2. 토큰으로 Google API 호출 : "액세스 토큰"으로 "Google 사용자 정보" 가져오기
     private GoogleUserInfoDto getGoogleUserInfo(String accessToken) throws JsonProcessingException {
         // Create HTTP Header
         HttpHeaders headers = new HttpHeaders();

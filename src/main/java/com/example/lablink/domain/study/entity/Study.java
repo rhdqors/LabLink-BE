@@ -2,6 +2,7 @@ package com.example.lablink.domain.study.entity;
 
 import com.example.lablink.domain.company.entity.Company;
 import com.example.lablink.domain.study.dto.requestDto.StudyRequestDto;
+import com.example.lablink.global.common.constants.ImageConstants;
 import com.example.lablink.global.timestamp.entity.Timestamped;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -119,9 +120,9 @@ public class Study extends Timestamped {
         this.subjectMinAge = requestDto.getSubjectMinAge();
         this.subjectMaxAge = requestDto.getSubjectMaxAge();
         this.endDate = requestDto.getEndDate();
-        // done: 이미지 null값일 시 썸네일 넣어주기
-        this.thumbnailImageURL = Objects.requireNonNullElse(thumbnailImageURL, "https://cdn.icon-icons.com/icons2/931/PNG/512/empty_file_icon-icons.com_72420.png");
-        this.detailImageURL = Objects.requireNonNullElse(detailImageURL, "https://cdn.icon-icons.com/icons2/931/PNG/512/empty_file_icon-icons.com_72420.png");
+        // 이미지 null값일 시 기본 이미지 설정
+        this.thumbnailImageURL = Objects.requireNonNullElse(thumbnailImageURL, ImageConstants.DEFAULT_IMAGE_URL);
+        this.detailImageURL = Objects.requireNonNullElse(detailImageURL, ImageConstants.DEFAULT_IMAGE_URL);
         this.status = status;
         this.category = requestDto.getCategory();
         this.emailSend =false;
@@ -147,10 +148,10 @@ public class Study extends Timestamped {
     }
 
     public void deleteThumbnail(){
-        this.thumbnailImageURL = "https://cdn.icon-icons.com/icons2/931/PNG/512/empty_file_icon-icons.com_72420.png";
+        this.thumbnailImageURL = ImageConstants.DEFAULT_IMAGE_URL;
     }
 
     public void deleteDetailImage(){
-        this.detailImageURL = "https://cdn.icon-icons.com/icons2/931/PNG/512/empty_file_icon-icons.com_72420.png";
+        this.detailImageURL = ImageConstants.DEFAULT_IMAGE_URL;
     }
 }

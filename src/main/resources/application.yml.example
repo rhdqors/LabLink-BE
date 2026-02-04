@@ -1,0 +1,66 @@
+# LabLink Backend Application Configuration Example
+# 이 파일을 복사하여 application.yml로 사용.
+# 실제 값은 각 환경에 맞게 설정.
+
+spring:
+  profiles:
+    active: local  # local, dev, prod
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/lablink?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: your_username
+    password: your_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  redis:
+    host: localhost
+    port: 6379
+
+  # OAuth2 설정
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: your_google_client_id
+            client-secret: your_google_client_secret
+            redirect-uri: http://localhost:3000/users/google/login
+            scope: profile, email
+
+# Kakao OAuth 설정
+oauth:
+  kakao:
+    client-id: your_kakao_client_id
+    redirect-uri: http://localhost:3000/users/kakao/login
+
+# JWT 설정
+jwt:
+  secret:
+    key: your_jwt_secret_key_base64_encoded_at_least_256_bits
+
+# AWS S3 설정
+cloud:
+  aws:
+    credentials:
+      access-key: your_aws_access_key
+      secret-key: your_aws_secret_key
+    s3:
+      bucket: your_bucket_name
+    region:
+      static: ap-northeast-2
+    stack:
+      auto: false
+
+# 기본 이미지 URL
+app:
+  default-image:
+    url: https://cdn.icon-icons.com/icons2/931/PNG/512/empty_file_icon-icons.com_72420.png

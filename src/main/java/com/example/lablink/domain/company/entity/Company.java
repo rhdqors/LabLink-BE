@@ -2,6 +2,7 @@ package com.example.lablink.domain.company.entity;
 
 import com.example.lablink.domain.company.dto.request.CompanySignupRequestDto;
 import com.example.lablink.domain.user.entity.UserRoleEnum;
+import com.example.lablink.global.common.constants.ImageConstants;
 import com.example.lablink.global.timestamp.entity.Timestamped;
 import lombok.Builder;
 import lombok.Getter;
@@ -65,7 +66,7 @@ public class Company extends Timestamped {
         this.managerPhone = companySignupRequestDto.getManagerPhone();
         this.address = companySignupRequestDto.getAddress();
         this.detailAddress = companySignupRequestDto.getDetailAddress();
-        this.logoUrl = Objects.requireNonNullElse(logoUrl, "https://cdn.icon-icons.com/icons2/931/PNG/512/empty_file_icon-icons.com_72420.png");
+        this.logoUrl = Objects.requireNonNullElse(logoUrl, ImageConstants.DEFAULT_IMAGE_URL);
         this.role = role;
     }
 
