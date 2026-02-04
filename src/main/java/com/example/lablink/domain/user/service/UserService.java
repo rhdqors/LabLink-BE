@@ -1,6 +1,5 @@
 package com.example.lablink.domain.user.service;
 
-import com.example.lablink.domain.company.service.CompanyService;
 import com.example.lablink.domain.user.dto.request.UserNickNameRequestDto;
 import com.example.lablink.domain.user.entity.RefreshToken;
 import com.example.lablink.domain.user.entity.User;
@@ -9,6 +8,7 @@ import com.example.lablink.domain.user.repository.RefreshTokenRepository;
 import com.example.lablink.domain.user.repository.UserQueryRepository;
 import com.example.lablink.domain.user.repository.UserRepository;
 import com.example.lablink.domain.user.security.UserDetailsImpl;
+import com.example.lablink.global.auth.EmailValidationService;
 import com.example.lablink.global.common.dto.request.SignupEmailCheckRequestDto;
 import com.example.lablink.global.exception.GlobalErrorCode;
 import com.example.lablink.global.exception.GlobalException;
@@ -23,15 +23,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.inject.Provider;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.servlet.http.Cookie;
@@ -51,7 +47,7 @@ public class UserService {
     private final JwtUtil jwtUtil;
     private final UserInfoService userInfoService;
     private final EntityManager em;
-    private final @Lazy @Qualifier("companyService") Provider<CompanyService> companyServiceProvider;
+    private final EmailValidationService emailValidationService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserQueryRepository userQueryRepository;
 
@@ -61,14 +57,8 @@ public class UserService {
         String email = signupRequestDto.getEmail();
         String password = passwordEncoder.encode(signupRequestDto.getPassword());
 
-        // 가입 이메일 중복 확인
-        checkEmail(email);
-
-        // 기업과 유저의 이메일 중복 확인
-        CompanyService companyService = companyServiceProvider.get();
-        if(companyService.existEmail(email)) {
-            throw new GlobalException(GlobalErrorCode.DUPLICATE_EMAIL);
-        }
+        // 이메일 중복 확인 (User + Company 테이블)
+        emailValidationService.validateEmailNotDuplicated(email);
 
         // 가입 닉네임 중복 확인
         if (userRepository.existsByNickName(signupRequestDto.getNickName())) {
@@ -145,14 +135,8 @@ public class UserService {
     // 유저 이메일 중복 체크
     @Transactional(readOnly = true)
     public String emailCheck(SignupEmailCheckRequestDto signupEmailCheckRequestDto) {
-        if(userRepository.existsByEmail(signupEmailCheckRequestDto.getEmail())) {
-            throw new GlobalException(GlobalErrorCode.DUPLICATE_EMAIL);
-        }
-
-        CompanyService companyService = companyServiceProvider.get();
-        if(companyService.existEmail(signupEmailCheckRequestDto.getEmail())) {
-            throw new GlobalException(GlobalErrorCode.DUPLICATE_EMAIL);
-        }
+        // User + Company 테이블 이메일 중복 확인
+        emailValidationService.validateEmailNotDuplicated(signupEmailCheckRequestDto.getEmail());
         return "사용 가능합니다.";
     }
 
@@ -265,13 +249,4 @@ public class UserService {
         return userRepository.findByNickName(nickName).orElseThrow(() -> new GlobalException(GlobalErrorCode.USER_NOT_FOUND));
     }
 
-    // 가입 이메일 중복 확인
-    public void checkEmail(String email) {
-        if (userRepository.existsByEmail(email)) {
-            throw new GlobalException(GlobalErrorCode.DUPLICATE_EMAIL);
-        }
-    }
-    public boolean existEmail(String email) {
-        return userRepository.existsByEmail(email);
-    }
 }

@@ -9,9 +9,9 @@ import com.example.lablink.domain.company.repository.CompanyRepository;
 import com.example.lablink.domain.company.security.CompanyDetailsImpl;
 import com.example.lablink.domain.study.entity.Study;
 import com.example.lablink.domain.study.service.StudyService;
-import com.example.lablink.domain.user.service.UserService;
 import com.example.lablink.global.S3Image.dto.S3ResponseDto;
 import com.example.lablink.global.S3Image.entity.S3Image;
+import com.example.lablink.global.auth.EmailValidationService;
 import com.example.lablink.global.common.dto.request.SignupEmailCheckRequestDto;
 import com.example.lablink.global.exception.GlobalErrorCode;
 import com.example.lablink.global.exception.GlobalException;
@@ -27,7 +27,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import javax.inject.Provider;
 import javax.servlet.http.HttpServletResponse;
 
 import java.util.ArrayList;
@@ -50,9 +49,7 @@ class CompanyServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
-    private Provider<UserService> userServiceProvider;
-    @Mock
-    private UserService userService;
+    private EmailValidationService emailValidationService;
     @Mock
     private StudyService studyService;
     @Mock
@@ -90,10 +87,11 @@ class CompanyServiceTest {
         @DisplayName("성공 - 기업 회원가입")
         void companySignup() {
             // given
-            given(userServiceProvider.get()).willReturn(userService);
+            doNothing().when(emailValidationService).validateEmailNotDuplicated(any(String.class));
             // when
             companyService.companySignup(companySignupRequestDto, s3ResponseDto);
             // then
+            verify(emailValidationService).validateEmailNotDuplicated(companySignupRequestDto.getEmail());
             verify(companyRepository).save(any(Company.class));
         }
 
@@ -122,14 +120,12 @@ class CompanyServiceTest {
         void emailCheck() {
             // Given
             SignupEmailCheckRequestDto signupEmailCheckRequestDto = new SignupEmailCheckRequestDto("email@asdf123");
-            String companyEmail = signupEmailCheckRequestDto.getEmail();
-            String userEmail = "email@asdf123";
-            given(userServiceProvider.get()).willReturn(userService);
+            doNothing().when(emailValidationService).validateEmailNotDuplicated(any(String.class));
 
             // When
             companyService.emailCheck(signupEmailCheckRequestDto);
             // Then
-            assertEquals(companyEmail, userEmail);
+            verify(emailValidationService).validateEmailNotDuplicated(signupEmailCheckRequestDto.getEmail());
         }
 
         @Test
@@ -182,25 +178,6 @@ class CompanyServiceTest {
             assertEquals(viewMyStudies, views);
         }
 
-        @Test
-        @DisplayName("성공 - 이메일 중복x 사용 가능")
-        void checkEmail() {
-            String email = companySignupRequestDto.getEmail();
-            given(companyRepository.existsByEmail(email)).willReturn(false);
-            // when & then
-            companyService.checkEmail(email);
-        }
-
-        @Test
-        @DisplayName("성공 - 이메일 존재 확인")
-        void existEmail() {
-            String email = companySignupRequestDto.getEmail();
-            given(companyRepository.existsByEmail(email)).willReturn(false);
-            // when
-            boolean result = companyService.existEmail(email);
-            // then
-            assertFalse(result);
-        }
     } // 성공 케이스
 
     @Nested
@@ -210,21 +187,21 @@ class CompanyServiceTest {
         @DisplayName("실패 - 유저와 이메일 중복")
         void companySignupDuplicateEmail() {
             // given
-            String email = companySignupRequestDto.getEmail();
-            given(userServiceProvider.get()).willReturn(userService);
-            given(userService.existEmail(email)).willReturn(true);
+            doThrow(new GlobalException(GlobalErrorCode.DUPLICATE_EMAIL))
+                    .when(emailValidationService).validateEmailNotDuplicated(any(String.class));
 
             // when & then
-            assertThrows(GlobalException.class, () -> {
+            GlobalException exception = assertThrows(GlobalException.class, () -> {
                 companyService.companySignup(companySignupRequestDto, s3ResponseDto);
-            }, "중복된 이메일이 존재합니다.");
+            });
+            assertEquals(GlobalErrorCode.DUPLICATE_EMAIL, exception.getErrorCode());
         }
         @Test
         @DisplayName("실패 - 중복된 회사 이름")
         void duplicateCompanyName() {
             // given
             String companyName = companySignupRequestDto.getCompanyName();
-            given(userServiceProvider.get()).willReturn(userService);
+            doNothing().when(emailValidationService).validateEmailNotDuplicated(any(String.class));
             given(companyRepository.existsByCompanyName(companyName)).willReturn(true);
 
             // when & then

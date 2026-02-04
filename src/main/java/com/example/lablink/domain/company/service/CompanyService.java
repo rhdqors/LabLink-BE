@@ -1,8 +1,8 @@
 
 package com.example.lablink.domain.company.service;
 
-import com.example.lablink.domain.user.service.UserService;
 import com.example.lablink.global.S3Image.dto.S3ResponseDto;
+import com.example.lablink.global.auth.EmailValidationService;
 import com.example.lablink.domain.company.dto.request.CompanyLoginRequestDto;
 import com.example.lablink.domain.company.dto.request.CompanyNameCheckRequestDto;
 import com.example.lablink.domain.company.dto.request.CompanySignupRequestDto;
@@ -18,13 +18,10 @@ import com.example.lablink.global.exception.GlobalException;
 import com.example.lablink.global.jwt.JwtUtil;
 import com.example.lablink.domain.study.service.StudyService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.inject.Provider;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +34,7 @@ public class CompanyService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final StudyService studyService;
-    private final @Lazy @Qualifier("userService") Provider<UserService> userServiceProvider;
+    private final EmailValidationService emailValidationService;
 
 //    인증 인가를 담당하는 Service의 보안? 을 위함이기에 단익책임 위반 X
 //    private final CsrfTokenRepository csrfTokenRepository;
@@ -48,14 +45,8 @@ public class CompanyService {
         String email = companySignupRequestDto.getEmail();
         String password = passwordEncoder.encode(companySignupRequestDto.getPassword());
 
-        // 가입 이메일 중복 확인
-        checkEmail(email);
-
-        // 유저와 기업의 이메일 중복 검사
-        UserService userService = userServiceProvider.get();
-        if(userService.existEmail(email)) {
-            throw new GlobalException(GlobalErrorCode.DUPLICATE_EMAIL);
-        }
+        // 이메일 중복 확인 (User + Company 테이블)
+        emailValidationService.validateEmailNotDuplicated(email);
 
         // 로그인시 작성 회사명 db의 회사명의 일치, 존재 확인
         if (companyRepository.existsByCompanyName(companySignupRequestDto.getCompanyName())) {
@@ -117,14 +108,8 @@ public class CompanyService {
     // 기업 이메일 중복 체크
     @Transactional(readOnly = true)
     public void emailCheck(SignupEmailCheckRequestDto signupEmailCheckRequestDto) {
-        if(companyRepository.existsByEmail(signupEmailCheckRequestDto.getEmail())) {
-            throw new GlobalException(GlobalErrorCode.DUPLICATE_EMAIL);
-        }
-
-        UserService userService = userServiceProvider.get();
-        if(userService.existEmail(signupEmailCheckRequestDto.getEmail())) {
-            throw new GlobalException(GlobalErrorCode.DUPLICATE_EMAIL);
-        }
+        // User + Company 테이블 이메일 중복 확인
+        emailValidationService.validateEmailNotDuplicated(signupEmailCheckRequestDto.getEmail());
     }
 
     // 기업명 중복 체크
@@ -163,14 +148,5 @@ public class CompanyService {
         return views;
     }
 
-    public void checkEmail(String email) {
-        if (companyRepository.existsByEmail(email)) {
-            throw new GlobalException(GlobalErrorCode.DUPLICATE_EMAIL);
-        }
-    }
-
-    public boolean existEmail(String email) {
-        return companyRepository.existsByEmail(email);
-    }
 }
 

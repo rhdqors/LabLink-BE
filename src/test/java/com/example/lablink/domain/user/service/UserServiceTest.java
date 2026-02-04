@@ -1,16 +1,10 @@
 package com.example.lablink.domain.user.service;
 
-import com.example.lablink.domain.application.service.ApplicationService;
-import com.example.lablink.domain.bookmark.service.BookmarkService;
 import com.example.lablink.domain.company.entity.Company;
-import com.example.lablink.domain.company.service.CompanyService;
-import com.example.lablink.domain.study.entity.Study;
 import com.example.lablink.domain.user.dto.response.MyLabResponseDto;
 import com.example.lablink.domain.user.entity.*;
 import com.example.lablink.domain.user.repository.RefreshTokenRepository;
-import com.example.lablink.domain.user.service.TermsService;
-import com.example.lablink.domain.user.service.UserInfoService;
-import com.example.lablink.domain.user.service.UserService;
+import com.example.lablink.global.auth.EmailValidationService;
 import com.example.lablink.global.common.dto.request.SignupEmailCheckRequestDto;
 import com.example.lablink.global.exception.GlobalErrorCode;
 import com.example.lablink.global.exception.GlobalException;
@@ -20,8 +14,6 @@ import com.example.lablink.domain.user.dto.request.SignupRequestDto;
 import com.example.lablink.domain.user.dto.request.UserNickNameRequestDto;
 import com.example.lablink.domain.user.repository.UserRepository;
 import com.example.lablink.domain.user.security.UserDetailsImpl;
-import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,14 +24,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import javax.inject.Provider;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,7 +37,7 @@ import static java.time.LocalDateTime.now;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,16 +48,11 @@ class UserServiceTest {
     // setup메서드는 Mock객체를 인스턴스화 시키는 것 ?
     @InjectMocks
     private UserService userService;
-    // Mock으로 UserService에서 사용되는 클래스를 의존성 주입함.
-    // 테스트에서는 UserService의 JwtUtill과 같은 클래스를 주입받을 필요는 없다.
+
     @Mock
     private UserRepository userRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
-    @Mock
-    private BookmarkService bookmarkService;
-    @Mock
-    private ApplicationService applicationService;
     @Mock
     private EntityManager em;
     @Mock
@@ -77,9 +62,7 @@ class UserServiceTest {
     @Mock
     private JwtUtil jwtUtil;
     @Mock
-    private Provider<CompanyService> companyServiceProvider; // Provider 타입의 모킹 필요
-    @Mock
-    private CompanyService companyService; // Provider 타입의 모킹 필요
+    private EmailValidationService emailValidationService;
     @Mock
     private HttpServletRequest httpServletRequest;
     @Mock
@@ -111,15 +94,15 @@ class UserServiceTest {
             // given
             User user = new User();
             Terms terms = new Terms();
+            doNothing().when(emailValidationService).validateEmailNotDuplicated(any(String.class));
             given(userInfoService.saveUserInfo(signupRequestDto)).willReturn(new UserInfo());
             given(userRepository.save(any(User.class))).willReturn(user);
             given(termsService.saveTerms(signupRequestDto, user)).willReturn(terms);
-            given(companyServiceProvider.get()).willReturn(companyService);
-            given(companyService.existEmail(any(String.class))).willReturn(false);
             // when
             String result = userService.signup(signupRequestDto);
             // then
             assertEquals("회원가입 완료.", result);
+            verify(emailValidationService).validateEmailNotDuplicated(signupRequestDto.getEmail());
         }
         @Test
         @DisplayName("로그인 성공")
@@ -141,12 +124,12 @@ class UserServiceTest {
         void signup_can_use_email() {
             // given
             SignupEmailCheckRequestDto signupEmailCheckRequestDto = new SignupEmailCheckRequestDto("wrongTest01@naver.com");
-            given(userRepository.existsByEmail(signupEmailCheckRequestDto.getEmail())).willReturn(false);
-            given(companyServiceProvider.get()).willReturn(companyService);
+            doNothing().when(emailValidationService).validateEmailNotDuplicated(any(String.class));
             // when
             String result = userService.emailCheck(signupEmailCheckRequestDto);
             // then
             assertEquals("사용 가능합니다.", result);
+            verify(emailValidationService).validateEmailNotDuplicated(signupEmailCheckRequestDto.getEmail());
         }
         @Test
         @DisplayName("회원가입 - 닉네임 사용 가능")
@@ -224,27 +207,28 @@ class UserServiceTest {
         @DisplayName("회원가입 실패 - 이메일 존재")
         void signup_fail_duplicateEmail() {
             // given
-            given(userRepository.existsByEmail(signupRequestDto.getEmail())).willReturn(true);
+            doThrow(new GlobalException(GlobalErrorCode.DUPLICATE_EMAIL))
+                    .when(emailValidationService).validateEmailNotDuplicated(any(String.class));
             // when & then
-            assertThrows(GlobalException.class,
-                    () -> userService.signup(signupRequestDto), GlobalErrorCode.DUPLICATE_EMAIL.getMessage());
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.signup(signupRequestDto));
+            assertEquals(GlobalErrorCode.DUPLICATE_EMAIL, exception.getErrorCode());
         }
         @Test
         @DisplayName("회원가입 실패 - 닉네임 존재")
         void signup_fail_duplicateNickName() {
             // given
-            given(companyServiceProvider.get()).willReturn(companyService);
+            doNothing().when(emailValidationService).validateEmailNotDuplicated(any(String.class));
             given(userRepository.existsByNickName(signupRequestDto.getNickName())).willReturn(true);
             // when and then
-            GlobalException exception = assertThrows(GlobalException.class, () -> userService.signup(signupRequestDto),
-                    GlobalErrorCode.DUPLICATE_NICK_NAME.getMessage());
+            GlobalException exception = assertThrows(GlobalException.class, () -> userService.signup(signupRequestDto));
             assertEquals(GlobalErrorCode.DUPLICATE_NICK_NAME, exception.getErrorCode());
         }
         @Test
         @DisplayName("회원가입 실패 - 필수 약관 미동의")
         void signup_insufficientTermsAgreement() {
             // given
-            given(companyServiceProvider.get()).willReturn(companyService);
+            doNothing().when(emailValidationService).validateEmailNotDuplicated(any(String.class));
             SignupRequestDto signupRequestDto2 = new SignupRequestDto(
                     "test01@naver.com",
                     "nick",
@@ -257,9 +241,7 @@ class UserServiceTest {
                     false
             );
             // when & then
-            GlobalException exception = assertThrows(GlobalException.class, () -> userService.signup(signupRequestDto2),
-                    GlobalErrorCode.NEED_AGREE_REQUIRE_TERMS.getMessage());
-            // then
+            GlobalException exception = assertThrows(GlobalException.class, () -> userService.signup(signupRequestDto2));
             assertEquals(GlobalErrorCode.NEED_AGREE_REQUIRE_TERMS, exception.getErrorCode());
         }
         @Test
@@ -267,11 +249,10 @@ class UserServiceTest {
         void email_check_duplicate_email_failure() {
             // given
             SignupEmailCheckRequestDto signupEmailCheckRequestDto = new SignupEmailCheckRequestDto("existingEmail@example.com");
-            given(companyServiceProvider.get()).willReturn(companyService);
-            given(companyService.existEmail(signupEmailCheckRequestDto.getEmail())).willReturn(true);
+            doThrow(new GlobalException(GlobalErrorCode.DUPLICATE_EMAIL))
+                    .when(emailValidationService).validateEmailNotDuplicated(any(String.class));
             // when and then
-            GlobalException exception = assertThrows(GlobalException.class, () -> userService.emailCheck(signupEmailCheckRequestDto),
-                    GlobalErrorCode.DUPLICATE_EMAIL.getMessage());
+            GlobalException exception = assertThrows(GlobalException.class, () -> userService.emailCheck(signupEmailCheckRequestDto));
             assertEquals(GlobalErrorCode.DUPLICATE_EMAIL, exception.getErrorCode());
         }
         @Test
@@ -328,18 +309,6 @@ class UserServiceTest {
             // when & then
             assertThrows(GlobalException.class,
                     () -> userService.getUser(userDetails), GlobalErrorCode.USER_NOT_FOUND.getMessage());
-        }
-        @Test
-        @DisplayName("이메일 중복 검사 실패 - 중복 존재")
-        void existEmail() {
-            // Given
-            String email = "existing@example.com";
-            given(userRepository.existsByEmail(email)).willReturn(true);
-            // When
-            boolean emailExists = userService.existEmail(email);
-            // Then
-            assertTrue(emailExists, "Expected emailExists to be true");
-            verify(userRepository).existsByEmail(email);
         }
 //        @Test
 //        @DisplayName("리프레쉬 토큰 발급")
