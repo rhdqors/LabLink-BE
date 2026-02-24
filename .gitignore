@@ -45,3 +45,8 @@ docker-compose.yml
 ### Claude ###
 CLAUDE.md
 mydocs/
+.claude/
+
+### Misc ###
+nul
+TEMPLATE-GUIDE.md
