@@ -60,7 +60,15 @@ public enum GlobalErrorCode {
     // 400 BAD_REQUEST - 잘못된 요청
     NOT_MY_APPLICATION(BAD_REQUEST, "내가 작성한 신청서가 아닙니다."),
     // 404 Not Found - 찾을 수 없음
-    APPLICATION_NOT_FOUND(NOT_FOUND, "등록된 신청서가 없습니다");
+    APPLICATION_NOT_FOUND(NOT_FOUND, "등록된 신청서가 없습니다"),
+
+//  Global
+    // 400 BAD_REQUEST - 입력값 오류
+    INVALID_INPUT_VALUE(BAD_REQUEST, "입력값이 올바르지 않습니다"),
+    // 405 Method Not Allowed
+    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "허용되지 않은 메서드입니다"),
+    // 500 Internal Server Error
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다");
 
     private final HttpStatus httpStatus;
     private final String message;
