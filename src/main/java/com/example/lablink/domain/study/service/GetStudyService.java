@@ -8,11 +8,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class GetStudyService {
     private final StudyRepository studyRepository;
-    // getStudy 매서드
+
     @Transactional(readOnly = true)
     public Study getStudy(Long studyId){
         return studyRepository.findById(studyId).orElseThrow(
@@ -20,5 +25,9 @@ public class GetStudyService {
         );
     }
 
-
+    @Transactional(readOnly = true)
+    public Map<Long, Study> getStudiesByIds(List<Long> studyIds) {
+        return studyRepository.findAllById(studyIds).stream()
+                .collect(Collectors.toMap(Study::getId, Function.identity()));
+    }
 }

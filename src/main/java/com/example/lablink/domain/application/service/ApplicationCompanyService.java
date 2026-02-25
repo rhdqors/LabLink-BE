@@ -70,7 +70,7 @@ public class ApplicationCompanyService {
 
         List<ApplicationFromStudyResponseDto> applicationDtos = new ArrayList<>();
         // 2. 1번의 공고id를 사용해 해당 공고의 신청서를 리스트에 저장.
-        List<Application> applications = applicationRepository.findByStudyId(study.getId());
+        List<Application> applications = applicationRepository.findByStudyIdWithUserAndUserInfo(study.getId());
 
         for (Application application : applications) {
             applicationDtos.add(new ApplicationFromStudyResponseDto(application.getUser(), application.getUser().getUserinfo(), application));

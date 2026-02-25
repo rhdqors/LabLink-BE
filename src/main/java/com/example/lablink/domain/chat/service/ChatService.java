@@ -23,6 +23,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -87,12 +89,14 @@ public class ChatService {
         List<MessageListDto> messages = chatMessageRepository.findAllByRoom(room).stream()
                 .map(m -> new MessageListDto(m.getSender().getNickName(), m.getContent(), m.getRoom().getRoomId(), changeDateFormat(m.getCreatedAt()))).toList();
         List<ChatRoom> chatRooms = chatRoomRepository.findAllChatRoomByCompany(company);
+        Map<Long, ChatMessage> lastMessageMap = chatMessageRepository.findLastMessageByRooms(chatRooms).stream()
+                .collect(Collectors.toMap(m -> m.getRoom().getId(), m -> m));
         List<RoomListDto> rooms = new ArrayList<>();
         for (ChatRoom chatRoom : chatRooms) {
             boolean target = chatRoom.getRoomId().equals(roomId);
             User other = chatRoom.getUser();
-            List<ChatMessage> chatMessages = chatMessageRepository.findLastMessageByRoom(chatRoom);
-            String lastMessage = chatMessages.size() > 0 ? chatMessages.get(0).getContent() : null;
+            ChatMessage lastMsg = lastMessageMap.get(chatRoom.getId());
+            String lastMessage = lastMsg != null ? lastMsg.getContent() : null;
             rooms.add(new RoomListDto(chatRoom.getRoomId(), other.getNickName(), null, lastMessage, target));
         }
         return new MyChatRoomResponseDto(messages, rooms);
@@ -104,12 +108,14 @@ public class ChatService {
         List<MessageListDto> messages = chatMessageRepository.findAllByRoom(room).stream()
                 .map(m -> new MessageListDto(m.getSender().getNickName(), m.getContent(), m.getRoom().getRoomId(), changeDateFormat(m.getCreatedAt()))).toList();
         List<ChatRoom> chatRooms = chatRoomRepository.findAllChatRoomByUser(user);
+        Map<Long, ChatMessage> lastMessageMap = chatMessageRepository.findLastMessageByRooms(chatRooms).stream()
+                .collect(Collectors.toMap(m -> m.getRoom().getId(), m -> m));
         List<RoomListDto> rooms = new ArrayList<>();
         for (ChatRoom chatRoom : chatRooms) {
             boolean target = chatRoom.getRoomId().equals(roomId);
             Company other = chatRoom.getOwner();
-            List<ChatMessage> chatMessages = chatMessageRepository.findLastMessageByRoom(chatRoom);
-            String lastMessage = chatMessages.size() > 0 ? chatMessages.get(0).getContent() : null;
+            ChatMessage lastMsg = lastMessageMap.get(chatRoom.getId());
+            String lastMessage = lastMsg != null ? lastMsg.getContent() : null;
             rooms.add(new RoomListDto(chatRoom.getRoomId(), other.getCompanyName(), other.getLogoUrl(), lastMessage, target));
         }
         return new MyChatRoomResponseDto(messages, rooms);
