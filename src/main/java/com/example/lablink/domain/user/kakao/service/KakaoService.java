@@ -9,6 +9,7 @@ import com.example.lablink.domain.user.entity.UserInfo;
 import com.example.lablink.domain.user.service.UserInfoService;
 import com.example.lablink.global.exception.GlobalErrorCode;
 import com.example.lablink.global.exception.GlobalException;
+import com.example.lablink.global.jwt.JwtUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,9 +42,10 @@ public class KakaoService {
     private final UserRepository userRepository;
     private final UserInfoService userInfoService;
     private final TermsService termsService;
+    private final JwtUtil jwtUtil;
 
     @Transactional
-    public User kakaoLogin(String code, HttpServletResponse response) throws JsonProcessingException {
+    public void kakaoLogin(String code, HttpServletResponse response) throws JsonProcessingException {
         log.info("code : " + code);
         // 1. "인가 코드"로 "액세스 토큰" 요청
         String accessToken = getToken(code);
@@ -55,13 +57,10 @@ public class KakaoService {
         // 3. 신규 유저  회원가입
         signupIfNeeded(kakaoUserInfo);
 
-        //4. 회원 정보 반환
-//        Map<String, String> result = new HashMap<>();
-//        result.put("kakaoId", String.valueOf(kakaoUserInfo.getId()));
-//        result.put("nickname", kakaoUserInfo.getNickname());
-
-        // todo: 그냥 kakaoUserInfo.getId(), kakaoUserInfo.getNickname() 넘겨서 토큰 만드는 걸로 고치자 나중에
-        return userRepository.findByKakaoId(kakaoUserInfo.getId()).orElseThrow(() -> new GlobalException(GlobalErrorCode.USER_NOT_FOUND));
+        // 4. JWT 토큰 생성 및 응답 헤더에 추가
+        User kakaoUser = userRepository.findByKakaoId(kakaoUserInfo.getId())
+            .orElseThrow(() -> new GlobalException(GlobalErrorCode.USER_NOT_FOUND));
+        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, jwtUtil.createUserToken(kakaoUser));
     }
     private String getToken(String code) throws JsonProcessingException {
         // HTTP Header 생성

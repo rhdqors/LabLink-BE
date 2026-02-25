@@ -1,7 +1,5 @@
 package com.example.lablink.domain.study.controller;
 
-import com.example.lablink.global.S3Image.dto.S3ResponseDto;
-import com.example.lablink.global.S3Image.service.S3UploaderService;
 import com.example.lablink.domain.company.security.CompanyDetailsImpl;
 import com.example.lablink.domain.study.dto.StudySearchOption;
 import com.example.lablink.domain.study.dto.requestDto.StudyRequestDto;
@@ -17,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,27 +26,14 @@ import java.util.List;
 @RequestMapping("/studies")
 public class StudyController {
     private final StudyService studyService;
-    private final S3UploaderService s3UploaderService;
     private final StudySearchService studySearchService;
 
     // 게시글 작성
     @Operation(summary = "공고 작성", description = "공고 작성")
     @PostMapping()
-    public ResponseEntity createStudy(StudyRequestDto requestDto
-            , @AuthenticationPrincipal CompanyDetailsImpl companyDetails
-            /*, @RequestParam(value="image") MultipartFile image */){
-        S3ResponseDto thumbnailS3ResponseDto = null;
-        S3ResponseDto detailS3ResponseDto = null;
-        if(requestDto.getThumbnailImage() != null){
-            MultipartFile thumbnailImage = requestDto.getThumbnailImage();
-            thumbnailS3ResponseDto = s3UploaderService.uploadFiles("thumbnail", thumbnailImage);
-        }
-        if(requestDto.getDetailImage() != null){
-            MultipartFile detailImage = requestDto.getDetailImage();
-            detailS3ResponseDto = s3UploaderService.uploadFiles("detail", detailImage);
-
-        }
-        studyService.createStudy(requestDto, companyDetails, thumbnailS3ResponseDto, detailS3ResponseDto);
+    public ResponseEntity createStudy(StudyRequestDto requestDto,
+            @AuthenticationPrincipal CompanyDetailsImpl companyDetails) {
+        studyService.createStudy(requestDto, companyDetails);
         return ResponseMessage.SuccessResponse("게시글 작성 성공", "");
     }
 

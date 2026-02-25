@@ -2,6 +2,7 @@
 package com.example.lablink.domain.company.service;
 
 import com.example.lablink.global.S3Image.dto.S3ResponseDto;
+import com.example.lablink.global.S3Image.service.S3UploaderService;
 import com.example.lablink.global.auth.EmailValidationService;
 import com.example.lablink.domain.company.dto.request.CompanyLoginRequestDto;
 import com.example.lablink.domain.company.dto.request.CompanyNameCheckRequestDto;
@@ -35,13 +36,14 @@ public class CompanyService {
     private final JwtUtil jwtUtil;
     private final StudyService studyService;
     private final EmailValidationService emailValidationService;
+    private final S3UploaderService s3UploaderService;
 
 //    인증 인가를 담당하는 Service의 보안? 을 위함이기에 단익책임 위반 X
 //    private final CsrfTokenRepository csrfTokenRepository;
 
     // 기업 회원가입
     @Transactional
-    public void companySignup(CompanySignupRequestDto companySignupRequestDto, S3ResponseDto s3ResponseDto) {
+    public void companySignup(CompanySignupRequestDto companySignupRequestDto) {
         String email = companySignupRequestDto.getEmail();
         String password = passwordEncoder.encode(companySignupRequestDto.getPassword());
 
@@ -53,7 +55,11 @@ public class CompanyService {
             throw new GlobalException(GlobalErrorCode.DUPLICATE_COMPANY_NAME);
         }
 
-        String logoUrl = (s3ResponseDto != null) ? s3ResponseDto.getUploadFileUrl() : null;
+        String logoUrl = null;
+        if (companySignupRequestDto.getLogo() != null) {
+            S3ResponseDto s3ResponseDto = s3UploaderService.uploadFiles("logo", companySignupRequestDto.getLogo());
+            logoUrl = s3ResponseDto.getUploadFileUrl();
+        }
         Company company = new Company(
             companySignupRequestDto.getEmail(),
             password,
