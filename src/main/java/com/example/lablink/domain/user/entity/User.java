@@ -1,8 +1,6 @@
 package com.example.lablink.domain.user.entity;
 
-import com.example.lablink.domain.application.dto.Request.ApplicationRequestDto;
 import com.example.lablink.global.timestamp.entity.Timestamped;
-import com.example.lablink.domain.user.dto.request.SignupRequestDto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,7 +9,6 @@ import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
 import java.time.LocalDate;
-import java.util.Objects;
 
 @Entity(name = "users")
 @Table(name = "users", indexes = {
@@ -68,14 +65,10 @@ public class User extends Timestamped {
     @JoinColumn(name = "userinfo_id", nullable = false)
     private UserInfo userinfo;
 
-    // 회원가입시
-    public User(SignupRequestDto signupRequestDto, String password, UserInfo userinfo, UserRoleEnum role) {
-        this.email = signupRequestDto.getEmail();
-        this.nickName = signupRequestDto.getNickName();
+    public User(String email, String nickName, String password, UserInfo userinfo, UserRoleEnum role) {
+        this.email = email;
+        this.nickName = nickName;
         this.password = password;
-        this.userName = getUserName();
-        this.dateOfBirth = getDateOfBirth();
-        this.userGender = getUserGender();
         this.userinfo = userinfo;
         this.role = role;
     }
@@ -89,11 +82,10 @@ public class User extends Timestamped {
         this.role = role;
     }
 
-    // 신청서 작성시
-    public void updateUser(ApplicationRequestDto applicationRequestDto) {
-        this.userName = applicationRequestDto.getUserName();
-        this.dateOfBirth = applicationRequestDto.getDateOfBirth();
-        this.userGender = applicationRequestDto.getUserGender();
+    public void updateUser(String userName, LocalDate dateOfBirth, String userGender) {
+        this.userName = userName;
+        this.dateOfBirth = dateOfBirth;
+        this.userGender = userGender;
     }
 
     public User googleIdUpdate(String googleEmail) {

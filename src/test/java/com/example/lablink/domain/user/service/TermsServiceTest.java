@@ -6,7 +6,6 @@ import com.example.lablink.domain.user.entity.Terms;
 import com.example.lablink.domain.user.entity.User;
 import com.example.lablink.domain.user.repository.TermsRepository;
 import com.example.lablink.domain.user.service.TermsService;
-import org.apache.poi.ss.formula.functions.T;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,23 +46,25 @@ class TermsServiceTest {
     void saveTerms() {
         // given
         User user = new User();
-        given(termsRepository.save(any(Terms.class))).willReturn(new Terms(signupRequestDto, user));
+        given(termsRepository.save(any(Terms.class))).willReturn(new Terms(true, true, true, true, false, user));
         // when
         Terms terms = termsService.saveTerms(signupRequestDto, user);
         //then
         assertNotNull(terms);
     }
+
     @Test
     @DisplayName("소셜 약관 저장")
     void saveSocialTerms() {
         // given
         User user = new User();
-        given(termsRepository.save(any(Terms.class))).willReturn(new Terms(signupRequestDto, user));
+        given(termsRepository.save(any(Terms.class))).willReturn(new Terms(true, true, true, true, false, user));
         // when
         Terms terms = termsService.saveSocialTerms(termsRequestDto, user);
         //then
         assertNotNull(terms);
     }
+
     @Test
     @DisplayName("약관 삭제")
     void deleteTerms() {

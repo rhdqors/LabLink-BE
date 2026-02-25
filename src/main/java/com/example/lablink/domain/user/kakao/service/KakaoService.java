@@ -140,7 +140,7 @@ public class KakaoService {
             throw new UserException(UserErrorCode.NEED_AGREE_REQUIRE_TERMS);
         }*/
 
-        UserInfo userInfo = userInfoService.saveKakaoUserInfo(kakaoUserInfo);
+        UserInfo userInfo = userInfoService.saveKakaoUserInfo();
         User user = userRepository.save(new User(kakaoId, nickname, email, userInfo, UserRoleEnum.USER));
 //        termsService.saveSocialTerms(termsRequestDto, user);
     }

@@ -53,13 +53,19 @@ public class CompanyService {
             throw new GlobalException(GlobalErrorCode.DUPLICATE_COMPANY_NAME);
         }
 
-        Company company;
-        if(s3ResponseDto != null) {
-            String logoUrl = s3ResponseDto.getUploadFileUrl();
-            company = new Company(password, companySignupRequestDto, logoUrl, UserRoleEnum.BUSINESS);
-        } else {
-            company = new Company(password, companySignupRequestDto, null, UserRoleEnum.BUSINESS);
-        }
+        String logoUrl = (s3ResponseDto != null) ? s3ResponseDto.getUploadFileUrl() : null;
+        Company company = new Company(
+            companySignupRequestDto.getEmail(),
+            password,
+            companySignupRequestDto.getCompanyName(),
+            companySignupRequestDto.getOwnerName(),
+            companySignupRequestDto.getBusiness(),
+            companySignupRequestDto.getManagerPhone(),
+            companySignupRequestDto.getAddress(),
+            companySignupRequestDto.getDetailAddress(),
+            logoUrl,
+            UserRoleEnum.BUSINESS
+        );
 
         companyRepository.save(company);
     }

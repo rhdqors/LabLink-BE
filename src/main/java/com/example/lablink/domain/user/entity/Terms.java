@@ -1,8 +1,6 @@
 package com.example.lablink.domain.user.entity;
 
 import com.example.lablink.global.timestamp.entity.Timestamped;
-import com.example.lablink.domain.user.dto.request.SignupRequestDto;
-import com.example.lablink.domain.user.dto.request.TermsRequestDto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
@@ -12,7 +10,6 @@ import javax.persistence.*;
 
 @Entity
 @Getter
-// TODO  created, modified, deleted 다 필요한가 ?
 @Where(clause = "deleted_at IS NULL")
 @SQLDelete(sql = "UPDATE terms SET deleted_at = CONVERT_TZ(now(), 'UTC', 'Asia/Seoul') WHERE id = ?")
 @NoArgsConstructor
@@ -41,21 +38,14 @@ public class Terms extends Timestamped {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    public Terms(SignupRequestDto signupRequestDto, User user) {
-        this.ageCheck = signupRequestDto.isAgeCheck();
-        this.termsOfServiceAgreement = signupRequestDto.isTermsOfServiceAgreement();
-        this.privacyPolicyConsent = signupRequestDto.isPrivacyPolicyConsent();
-        this.sensitiveInfoConsent = signupRequestDto.isSensitiveInfoConsent();
-        this.marketingOptIn = signupRequestDto.isMarketingOptIn();
-        this.user = user;
-    }
-
-    public Terms(TermsRequestDto termsRequestDto, User user) {
-        this.ageCheck = termsRequestDto.isAgeCheck();
-        this.termsOfServiceAgreement = termsRequestDto.isTermsOfServiceAgreement();
-        this.privacyPolicyConsent = termsRequestDto.isPrivacyPolicyConsent();
-        this.sensitiveInfoConsent = termsRequestDto.isSensitiveInfoConsent();
-        this.marketingOptIn = termsRequestDto.isMarketingOptIn();
+    public Terms(boolean ageCheck, boolean termsOfServiceAgreement,
+                 boolean privacyPolicyConsent, boolean sensitiveInfoConsent,
+                 boolean marketingOptIn, User user) {
+        this.ageCheck = ageCheck;
+        this.termsOfServiceAgreement = termsOfServiceAgreement;
+        this.privacyPolicyConsent = privacyPolicyConsent;
+        this.sensitiveInfoConsent = sensitiveInfoConsent;
+        this.marketingOptIn = marketingOptIn;
         this.user = user;
     }
 }
