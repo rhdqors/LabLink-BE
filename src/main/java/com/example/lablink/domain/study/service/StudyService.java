@@ -43,20 +43,20 @@ public class StudyService {
     // 게시글 작성
     @Transactional
     @CacheEvict(cacheNames = "StudyResponseDtos", allEntries = true)
-    public void createStudy(StudyRequestDto requestDto, CompanyDetailsImpl companyDetails, S3ResponseDto thumbnailS3ResponseDto, S3ResponseDto detailS3ResponseDto) {
-        // todo : isCompanyLogin 통일
+    public void createStudy(StudyRequestDto requestDto, CompanyDetailsImpl companyDetails) {
         Company company = isCompanyLogin(companyDetails);
         StudyStatusEnum status = setStatus(requestDto.getEndDate());
-        Study study;
         String thumbnailImageURL = null;
         String detailImageURL = null;
-        if (thumbnailS3ResponseDto != null) {
+        if (requestDto.getThumbnailImage() != null) {
+            S3ResponseDto thumbnailS3ResponseDto = s3UploaderService.uploadFiles("thumbnail", requestDto.getThumbnailImage());
             thumbnailImageURL = thumbnailS3ResponseDto.getUploadFileUrl();
         }
-        if (detailS3ResponseDto != null){
+        if (requestDto.getDetailImage() != null) {
+            S3ResponseDto detailS3ResponseDto = s3UploaderService.uploadFiles("detail", requestDto.getDetailImage());
             detailImageURL = detailS3ResponseDto.getUploadFileUrl();
         }
-        study = new Study(
+        Study study = new Study(
             requestDto.getTitle(),
             requestDto.getStudyInfo(),
             requestDto.getDescription(),

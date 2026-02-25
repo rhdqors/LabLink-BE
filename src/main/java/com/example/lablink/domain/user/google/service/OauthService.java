@@ -6,6 +6,7 @@ import com.example.lablink.domain.user.repository.UserRepository;
 import com.example.lablink.domain.user.google.dto.GoogleUserInfoDto;
 import com.example.lablink.global.exception.GlobalErrorCode;
 import com.example.lablink.global.exception.GlobalException;
+import com.example.lablink.global.jwt.JwtUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,11 +43,10 @@ public class OauthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
-    public User googleLogin(String code, String scope, HttpServletResponse response) throws JsonProcessingException {
+    public void googleLogin(String code, String scope, HttpServletResponse response) throws JsonProcessingException {
         // 1. "인가 코드"로 "액세스 토큰" 요청
-        // 인가코드 -> 로그인 후 서비스제공자(구글)로부터 받는 임시 코드
-        // 인가코드는 일회성 그리고 짧은 시간내에 사용되어야함
         String accessToken = getToken(code, scope);
 
         // 2. 토큰으로 Google API 호출 : "액세스 토큰"으로 "Google 사용자 정보" 가져오기
@@ -55,11 +55,10 @@ public class OauthService {
         // 3. 필요시에 회원가입
         registerGoogleUserIfNeeded(googleUserInfo);
 
-        // 4. JWT 토큰 반환
-//        String createToken =  jwtUtil.createUserToken(googleUser);
-//        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, createToken);
-//        return createToken;
-        return userRepository.findByGoogleEmail(googleUserInfo.getEmail()).orElseThrow(() -> new GlobalException(GlobalErrorCode.USER_NOT_FOUND));
+        // 4. JWT 토큰 생성 및 응답 헤더에 추가
+        User googleUser = userRepository.findByGoogleEmail(googleUserInfo.getEmail())
+            .orElseThrow(() -> new GlobalException(GlobalErrorCode.USER_NOT_FOUND));
+        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, jwtUtil.createUserToken(googleUser));
     }
 
 

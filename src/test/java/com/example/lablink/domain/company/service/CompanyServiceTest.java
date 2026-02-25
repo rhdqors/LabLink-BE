@@ -11,6 +11,7 @@ import com.example.lablink.domain.study.entity.Study;
 import com.example.lablink.domain.study.service.StudyService;
 import com.example.lablink.global.S3Image.dto.S3ResponseDto;
 import com.example.lablink.global.S3Image.entity.S3Image;
+import com.example.lablink.global.S3Image.service.S3UploaderService;
 import com.example.lablink.global.auth.EmailValidationService;
 import com.example.lablink.global.common.dto.request.SignupEmailCheckRequestDto;
 import com.example.lablink.global.exception.GlobalErrorCode;
@@ -55,9 +56,9 @@ class CompanyServiceTest {
     @Mock
     private JwtUtil jwtUtil;
     @Mock
+    private S3UploaderService s3UploaderService;
+    @Mock
     private HttpServletResponse response;
-//    @Mock
-//    private S3Image s3Image;
 
     S3Image s3Image = new S3Image(
             1L,
@@ -88,8 +89,9 @@ class CompanyServiceTest {
         void companySignup() {
             // given
             doNothing().when(emailValidationService).validateEmailNotDuplicated(any(String.class));
+            given(s3UploaderService.uploadFiles(any(String.class), any())).willReturn(s3ResponseDto);
             // when
-            companyService.companySignup(companySignupRequestDto, s3ResponseDto);
+            companyService.companySignup(companySignupRequestDto);
             // then
             verify(emailValidationService).validateEmailNotDuplicated(companySignupRequestDto.getEmail());
             verify(companyRepository).save(any(Company.class));
@@ -192,7 +194,7 @@ class CompanyServiceTest {
 
             // when & then
             GlobalException exception = assertThrows(GlobalException.class, () -> {
-                companyService.companySignup(companySignupRequestDto, s3ResponseDto);
+                companyService.companySignup(companySignupRequestDto);
             });
             assertEquals(GlobalErrorCode.DUPLICATE_EMAIL, exception.getErrorCode());
         }
@@ -206,7 +208,7 @@ class CompanyServiceTest {
 
             // when & then
             GlobalException exception = assertThrows(GlobalException.class, () -> {
-                companyService.companySignup(companySignupRequestDto, s3ResponseDto);
+                companyService.companySignup(companySignupRequestDto);
             });
             assertEquals(GlobalErrorCode.DUPLICATE_COMPANY_NAME, exception.getErrorCode());
         }
