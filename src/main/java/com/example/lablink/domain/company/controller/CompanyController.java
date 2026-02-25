@@ -40,7 +40,7 @@ public class CompanyController {
 
     @Operation(summary = "기업 로그인", description = "기업 로그인")
     @PostMapping("/login")
-    public ResponseEntity companyLogin(@RequestBody CompanyLoginRequestDto companyLoginRequestDto, HttpServletResponse response) {
+    public ResponseEntity companyLogin(@Valid @RequestBody CompanyLoginRequestDto companyLoginRequestDto, HttpServletResponse response) {
         companyService.companyLogin(companyLoginRequestDto, response);
         return ResponseMessage.SuccessResponse("로그인 완료", "");
     }

@@ -15,6 +15,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+
 @Tag(name = "application", description = "application API")
 @Controller
 @RequiredArgsConstructor
@@ -26,7 +28,7 @@ public class ApplicationController {
 
     @Operation(summary = "신청서 작성", description = "신청서 작성")
     @PostMapping("/applications")
-    public ResponseEntity addApplication(@AuthenticationPrincipal UserDetailsImpl userDetails, @PathVariable Long studyId, @RequestBody ApplicationRequestDto applicationRequestDto){
+    public ResponseEntity addApplication(@AuthenticationPrincipal UserDetailsImpl userDetails, @PathVariable Long studyId, @Valid @RequestBody ApplicationRequestDto applicationRequestDto){
         applicationService.addApplication(userDetails, studyId,applicationRequestDto);
         return ResponseMessage.SuccessResponse("신청서 작성 성공","");
     }
@@ -53,7 +55,7 @@ public class ApplicationController {
 
     @Operation(summary = "신청서 승인, 거절", description = "신청서 승인, 거절")
     @PatchMapping("/applications/{applicationId}/status")
-    public ResponseEntity applicationStatus(@AuthenticationPrincipal CompanyDetailsImpl companyDetails, @RequestBody ApplicationStatusRequestDto statusRequestDto, @PathVariable Long studyId, @PathVariable Long applicationId){
+    public ResponseEntity applicationStatus(@AuthenticationPrincipal CompanyDetailsImpl companyDetails, @Valid @RequestBody ApplicationStatusRequestDto statusRequestDto, @PathVariable Long studyId, @PathVariable Long applicationId){
         applicationCompanyService.applicationStatus(companyDetails, statusRequestDto, studyId, applicationId);
         return ResponseMessage.SuccessResponse("완료.", "");
     }
