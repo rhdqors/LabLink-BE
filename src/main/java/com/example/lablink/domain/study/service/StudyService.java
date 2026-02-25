@@ -56,7 +56,24 @@ public class StudyService {
         if (detailS3ResponseDto != null){
             detailImageURL = detailS3ResponseDto.getUploadFileUrl();
         }
-        study = new Study(requestDto, status, company, thumbnailImageURL, detailImageURL);
+        study = new Study(
+            requestDto.getTitle(),
+            requestDto.getStudyInfo(),
+            requestDto.getDescription(),
+            requestDto.getBenefit(),
+            requestDto.getDate(),
+            requestDto.getAddress(),
+            requestDto.getPay(),
+            requestDto.getSubjectGender(),
+            requestDto.getSubjectMinAge(),
+            requestDto.getSubjectMaxAge(),
+            requestDto.getEndDate(),
+            requestDto.getCategory(),
+            status,
+            company,
+            thumbnailImageURL,
+            detailImageURL
+        );
         studyRepository.save(study);
     }
 

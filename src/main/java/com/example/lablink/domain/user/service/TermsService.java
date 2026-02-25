@@ -14,18 +14,29 @@ public class TermsService {
 
     private final TermsRepository termsRepository;
 
-    // 약관 저장
     public Terms saveTerms(SignupRequestDto signupRequestDto, User user) {
-        return termsRepository.save(new Terms(signupRequestDto, user));
+        return termsRepository.save(new Terms(
+            signupRequestDto.isAgeCheck(),
+            signupRequestDto.isTermsOfServiceAgreement(),
+            signupRequestDto.isPrivacyPolicyConsent(),
+            signupRequestDto.isSensitiveInfoConsent(),
+            signupRequestDto.isMarketingOptIn(),
+            user
+        ));
     }
 
-    // 약관 저장
     public Terms saveSocialTerms(TermsRequestDto termsRequestDto, User user) {
-        return termsRepository.save(new Terms(termsRequestDto, user));
+        return termsRepository.save(new Terms(
+            termsRequestDto.isAgeCheck(),
+            termsRequestDto.isTermsOfServiceAgreement(),
+            termsRequestDto.isPrivacyPolicyConsent(),
+            termsRequestDto.isSensitiveInfoConsent(),
+            termsRequestDto.isMarketingOptIn(),
+            user
+        ));
     }
 
-    //약관 삭제
-    public void deleteTerms (User user) {
+    public void deleteTerms(User user) {
         termsRepository.deleteByUser(user);
     }
 }

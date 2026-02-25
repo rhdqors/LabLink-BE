@@ -72,7 +72,13 @@ public class UserService {
         // 유저 저장 및 유저를 약관에 저장시킴 -> 약관을 유저에 저장시키면 유저를 불러올때마다 약관이 불려와 무거움
         // userinfo는 회원가입할 때 받지 않음.
         UserInfo userInfo = userInfoService.saveUserInfo(signupRequestDto);
-        User user = userRepository.save(new User(signupRequestDto, password, userInfo, UserRoleEnum.USER));
+        User user = userRepository.save(new User(
+            signupRequestDto.getEmail(),
+            signupRequestDto.getNickName(),
+            password,
+            userInfo,
+            UserRoleEnum.USER
+        ));
         termsService.saveTerms(signupRequestDto, user);
         return "회원가입 완료.";
     }

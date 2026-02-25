@@ -1,8 +1,5 @@
 package com.example.lablink.domain.user.entity;
 
-import com.example.lablink.domain.application.dto.Request.ApplicationRequestDto;
-import com.example.lablink.domain.user.kakao.dto.KakaoUserInfoDto;
-import com.example.lablink.domain.user.dto.request.SignupRequestDto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,19 +22,15 @@ public class UserInfo {
     @Column(nullable = true)
     private String userDetailAddress;
 
-    // xxx : 카카오로그인 phone 번호 못 받아서 true로 바꿈니다 ㅠ
     @Column(nullable = true)
     private String userPhone;
 
-    public UserInfo(SignupRequestDto signupRequestDto) {
-        this.userPhone = signupRequestDto.getUserPhone();
+    public UserInfo(String userPhone) {
+        this.userPhone = userPhone;
     }
 
-    public UserInfo(KakaoUserInfoDto kakaoUserInfoDto) {
-    }
-
-    public void updateUserInfo(ApplicationRequestDto applicationRequestDto) {
-        this.userAddress = applicationRequestDto.getUserAddress();
-        this.userDetailAddress = applicationRequestDto.getUserDetailAddress();
+    public void updateUserInfo(String userAddress, String userDetailAddress) {
+        this.userAddress = userAddress;
+        this.userDetailAddress = userDetailAddress;
     }
 }

@@ -36,8 +36,15 @@ public class ApplicationService {
         User user = userService.getUser(userDetails);
 
         // 신청서 작성시 회원가입에서 받지 않은 user정보 업데이트
-        user.updateUser(applicationRequestDto);
-        user.getUserinfo().updateUserInfo(applicationRequestDto);
+        user.updateUser(
+            applicationRequestDto.getUserName(),
+            applicationRequestDto.getDateOfBirth(),
+            applicationRequestDto.getUserGender()
+        );
+        user.getUserinfo().updateUserInfo(
+            applicationRequestDto.getUserAddress(),
+            applicationRequestDto.getUserDetailAddress()
+        );
 
         // 신청서 작성시 default -> 미열람, 승인 대기
         Application application = new Application(

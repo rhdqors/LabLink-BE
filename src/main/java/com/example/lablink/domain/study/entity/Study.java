@@ -1,7 +1,6 @@
 package com.example.lablink.domain.study.entity;
 
 import com.example.lablink.domain.company.entity.Company;
-import com.example.lablink.domain.study.dto.requestDto.StudyRequestDto;
 import com.example.lablink.global.common.constants.ImageConstants;
 import com.example.lablink.global.timestamp.entity.Timestamped;
 import lombok.Getter;
@@ -83,49 +82,28 @@ public class Study extends Timestamped {
     @Column(nullable = false)
     private int currentApplicantCount; // 지원자 현황
 
-//    @Builder
-//    public Study(Long id, Company company, String title, String studyInfo, String studyPurpose, String studyAction, Long subjectCount, LocalDateTime date, String address, int pay, String subjectGender, int subjectMinAge, int subjectMaxAge, int repeatCount, LocalDateTime endDate, String thumbnailImageURL, String detailImageURL, StudyStatusEnum status, CategoryEnum category, int currentApplicantCount) {
-//        this.id = id;
-//        this.company = company;
-//        this.title = title;
-//        this.studyInfo = studyInfo;
-//        this.studyPurpose = studyPurpose;
-//        this.studyAction = studyAction;
-//        this.subjectCount = subjectCount;
-//        this.date = date;
-//        this.address = address;
-//        this.pay = pay;
-//        this.subjectGender = subjectGender;
-//        this.subjectMinAge = subjectMinAge;
-//        this.subjectMaxAge = subjectMaxAge;
-//        this.repeatCount = repeatCount;
-//        this.endDate = endDate;
-//        this.thumbnailImageURL = thumbnailImageURL;
-//        this.detailImageURL = detailImageURL;
-//        this.status = status;
-//        this.category = category;
-//        this.currentApplicantCount = currentApplicantCount;
-//    }
-
-    public Study(StudyRequestDto requestDto, StudyStatusEnum status, Company company, String thumbnailImageURL, String detailImageURL) {
-        this.title = requestDto.getTitle();
+    public Study(String title, String studyInfo, String description, String benefit,
+                 LocalDateTime date, String address, int pay, String subjectGender,
+                 int subjectMinAge, int subjectMaxAge, LocalDateTime endDate,
+                 CategoryEnum category, StudyStatusEnum status, Company company,
+                 String thumbnailImageURL, String detailImageURL) {
+        this.title = title;
+        this.studyInfo = studyInfo;
+        this.description = description;
+        this.benefit = benefit;
+        this.date = date;
+        this.address = address;
+        this.pay = pay;
+        this.subjectGender = subjectGender;
+        this.subjectMinAge = subjectMinAge;
+        this.subjectMaxAge = subjectMaxAge;
+        this.endDate = endDate;
+        this.category = category;
+        this.status = status;
         this.company = company;
-        this.studyInfo = requestDto.getStudyInfo();
-        this.description = requestDto.getDescription();
-        this.benefit = requestDto.getBenefit();
-        this.date = requestDto.getDate();
-        this.address = requestDto.getAddress();
-        this.pay = requestDto.getPay();
-        this.subjectGender = requestDto.getSubjectGender();
-        this.subjectMinAge = requestDto.getSubjectMinAge();
-        this.subjectMaxAge = requestDto.getSubjectMaxAge();
-        this.endDate = requestDto.getEndDate();
-        // 이미지 null값일 시 기본 이미지 설정
         this.thumbnailImageURL = Objects.requireNonNullElse(thumbnailImageURL, ImageConstants.DEFAULT_IMAGE_URL);
         this.detailImageURL = Objects.requireNonNullElse(detailImageURL, ImageConstants.DEFAULT_IMAGE_URL);
-        this.status = status;
-        this.category = requestDto.getCategory();
-        this.emailSend =false;
+        this.emailSend = false;
         this.currentApplicantCount = 0;
     }
 

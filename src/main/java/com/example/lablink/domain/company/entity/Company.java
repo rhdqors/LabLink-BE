@@ -1,6 +1,5 @@
 package com.example.lablink.domain.company.entity;
 
-import com.example.lablink.domain.company.dto.request.CompanySignupRequestDto;
 import com.example.lablink.domain.user.entity.UserRoleEnum;
 import com.example.lablink.global.common.constants.ImageConstants;
 import com.example.lablink.global.timestamp.entity.Timestamped;
@@ -57,15 +56,17 @@ public class Company extends Timestamped {
     @Enumerated(value = EnumType.STRING)
     private UserRoleEnum role;
 
-    public Company(String password, CompanySignupRequestDto companySignupRequestDto, String logoUrl, UserRoleEnum role) {
-        this.email = companySignupRequestDto.getEmail();
+    public Company(String email, String password, String companyName, String ownerName,
+                   String business, String managerPhone, String address, String detailAddress,
+                   String logoUrl, UserRoleEnum role) {
+        this.email = email;
         this.password = password;
-        this.companyName = companySignupRequestDto.getCompanyName();
-        this.ownerName = companySignupRequestDto.getOwnerName();
-        this.business = companySignupRequestDto.getBusiness();
-        this.managerPhone = companySignupRequestDto.getManagerPhone();
-        this.address = companySignupRequestDto.getAddress();
-        this.detailAddress = companySignupRequestDto.getDetailAddress();
+        this.companyName = companyName;
+        this.ownerName = ownerName;
+        this.business = business;
+        this.managerPhone = managerPhone;
+        this.address = address;
+        this.detailAddress = detailAddress;
         this.logoUrl = Objects.requireNonNullElse(logoUrl, ImageConstants.DEFAULT_IMAGE_URL);
         this.role = role;
     }
