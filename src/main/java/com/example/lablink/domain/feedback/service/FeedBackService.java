@@ -46,7 +46,7 @@ public class FeedBackService {
     public List<FeedBackResponseDto> getFeedBack(CompanyDetailsImpl companyDetails, Long studyId) {
         studyService.checkRole(studyId,companyDetails.getCompany());
 
-        List<Feedback> feedbacks= feedBackRepository.findAllByStudyId(studyId);
+        List<Feedback> feedbacks= feedBackRepository.findAllByStudyIdWithUser(studyId);
         List<FeedBackResponseDto> result = new ArrayList<>();
         for (Feedback feedback: feedbacks) {
             result.add(new FeedBackResponseDto(feedback));
@@ -65,7 +65,7 @@ public class FeedBackService {
 
     public void excelDownloadFeedBack(CompanyDetailsImpl companyDetails, Long studyId){
         studyService.checkRole(studyId,companyDetails.getCompany());
-        List<Feedback> feedbacks= feedBackRepository.findAllByStudyId(studyId);
+        List<Feedback> feedbacks= feedBackRepository.findAllByStudyIdWithUser(studyId);
         List<FeedBackResponseDto> result = new ArrayList<>();
         for (Feedback feedback: feedbacks) {
             result.add(new FeedBackResponseDto(feedback));
@@ -127,7 +127,7 @@ public class FeedBackService {
     }
 
     public XSSFWorkbook emailSendFeedBack(Long studyId){
-        List<Feedback> feedbacks= feedBackRepository.findAllByStudyId(studyId);
+        List<Feedback> feedbacks= feedBackRepository.findAllByStudyIdWithUser(studyId);
         List<FeedBackResponseDto> result = new ArrayList<>();
         for (Feedback feedback: feedbacks) {
             result.add(new FeedBackResponseDto(feedback));
@@ -183,7 +183,7 @@ public class FeedBackService {
 
     public XSSFWorkbook studentExcelDownloadXSSF (Long studyId) throws Exception {
 
-        List<Feedback> feedbacks= feedBackRepository.findAllByStudyId(studyId);
+        List<Feedback> feedbacks= feedBackRepository.findAllByStudyIdWithUser(studyId);
         List<FeedBackResponseDto> result = new ArrayList<>();
         for (Feedback feedback: feedbacks) {
             result.add(new FeedBackResponseDto(feedback));

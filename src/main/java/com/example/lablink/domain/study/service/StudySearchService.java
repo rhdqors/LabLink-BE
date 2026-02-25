@@ -107,19 +107,17 @@ public class StudySearchService {
             studies = convertPageToList(pageStudies);
         }
 
+        List<Long> studyIds = studies.stream().map(Study::getId).collect(Collectors.toList());
+        Set<Long> bookmarkedIds = new java.util.HashSet<>();
+        if(user != null){
+            bookmarkedIds = bookmarkService.getBookmarkedStudyIds(studyIds, user);
+        }
+        if(company != null){
+            bookmarkedIds = bookmarkService.getBookmarkedStudyIds(studyIds, company);
+        }
         for (Study study : studies){
-            boolean isBookmarked = false;
-            boolean isApplied = false;
-            if(user != null){
-                // 북마크 기능 추가
-                isBookmarked = bookmarkService.checkBookmark(study.getId(), user);
-                /*// 지원 현황 추가
-                isApplied = applicationService.checkApplication(study.getId(), user);*/
-            }
-            if(company != null){
-                isBookmarked = bookmarkService.checkBookmark(study.getId(), company);
-            }
-            studyResponseDtos.add(new StudyResponseDto(study, isBookmarked/*, isApplied*/));
+            boolean isBookmarked = bookmarkedIds.contains(study.getId());
+            studyResponseDtos.add(new StudyResponseDto(study, isBookmarked));
         }
         return studyResponseDtos;
     }

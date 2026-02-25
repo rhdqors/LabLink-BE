@@ -14,7 +14,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -97,13 +101,27 @@ public class BookmarkService {
     }
 
     @Transactional(readOnly = true)
+    public Set<Long> getBookmarkedStudyIds(List<Long> studyIds, User user) {
+        return new HashSet<>(bookmarkRepository.findStudyIdsByUserAndStudyIdIn(user, studyIds));
+    }
+
+    @Transactional(readOnly = true)
+    public Set<Long> getBookmarkedStudyIds(List<Long> studyIds, Company company) {
+        return new HashSet<>(bookmarkRepository.findStudyIdsByCompanyAndStudyIdIn(company, studyIds));
+    }
+
+    @Transactional(readOnly = true)
     public List<BookmarkResponseDto> getUserBookmark(UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         List<Bookmark> bookmarks = findAllByMyBookmark(user);
+        List<Long> studyIds = bookmarks.stream().map(Bookmark::getStudyId).collect(Collectors.toList());
+        Map<Long, Study> studyMap = getStudyService.getStudiesByIds(studyIds);
         List<BookmarkResponseDto> bookmarkResponseDtos = new ArrayList<>();
         for (Bookmark bookmark : bookmarks) {
-            Study study = getStudyService.getStudy(bookmark.getStudyId());
-            bookmarkResponseDtos.add(new BookmarkResponseDto(study, bookmark));
+            Study study = studyMap.get(bookmark.getStudyId());
+            if (study != null) {
+                bookmarkResponseDtos.add(new BookmarkResponseDto(study, bookmark));
+            }
         }
         return bookmarkResponseDtos;
     }
@@ -112,10 +130,14 @@ public class BookmarkService {
     public List<BookmarkResponseDto> getCompanyBookmark(CompanyDetailsImpl companyDetails) {
         Company company = companyDetails.getCompany();
         List<Bookmark> bookmarks = findAllByMyBookmark(company);
+        List<Long> studyIds = bookmarks.stream().map(Bookmark::getStudyId).collect(Collectors.toList());
+        Map<Long, Study> studyMap = getStudyService.getStudiesByIds(studyIds);
         List<BookmarkResponseDto> bookmarkResponseDtos = new ArrayList<>();
         for (Bookmark bookmark : bookmarks) {
-            Study study = getStudyService.getStudy(bookmark.getStudyId());
-            bookmarkResponseDtos.add(new BookmarkResponseDto(study, bookmark));
+            Study study = studyMap.get(bookmark.getStudyId());
+            if (study != null) {
+                bookmarkResponseDtos.add(new BookmarkResponseDto(study, bookmark));
+            }
         }
         return bookmarkResponseDtos;
     }
