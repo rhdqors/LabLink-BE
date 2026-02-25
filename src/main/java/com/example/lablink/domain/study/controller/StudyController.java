@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +32,7 @@ public class StudyController {
     // 게시글 작성
     @Operation(summary = "공고 작성", description = "공고 작성")
     @PostMapping()
-    public ResponseEntity createStudy(StudyRequestDto requestDto,
+    public ResponseEntity createStudy(@Valid StudyRequestDto requestDto,
             @AuthenticationPrincipal CompanyDetailsImpl companyDetails) {
         studyService.createStudy(requestDto, companyDetails);
         return ResponseMessage.SuccessResponse("게시글 작성 성공", "");
@@ -100,7 +101,7 @@ public class StudyController {
     // 게시글 수정
     @Operation(summary = "공고 수정", description = "공고 수정")
     @PatchMapping("/{studyId}")
-    public ResponseEntity updateStudy(@PathVariable Long studyId, StudyRequestDto requestDto, @AuthenticationPrincipal CompanyDetailsImpl companyDetails){
+    public ResponseEntity updateStudy(@PathVariable Long studyId, @Valid StudyRequestDto requestDto, @AuthenticationPrincipal CompanyDetailsImpl companyDetails){
         studyService.updateStudy(studyId, requestDto, companyDetails);
         return ResponseMessage.SuccessResponse("공고 수정 성공", "");
     }

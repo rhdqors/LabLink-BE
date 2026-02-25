@@ -37,7 +37,7 @@ public class UserController {
 
     @Operation(summary = "유저 로그인", description = "유저 로그인")
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDto loginRequestDto, HttpServletResponse response) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto loginRequestDto, HttpServletResponse response) {
         return ResponseMessage.SuccessResponse(userService.login(loginRequestDto, response), "");
     }
 
