@@ -28,7 +28,8 @@ public enum GlobalErrorCode {
     USERINFO_NOT_FOUND(NOT_FOUND, "등록된 사용자 정보가 없습니다"),
     // 409 CONFLICT : Resource 를 찾을 수 없음
     DUPLICATE_EMAIL(CONFLICT, "중복된 이메일이 존재합니다"),
-    EXPIRED_REFRESH_TOKEN(BAD_REQUEST, "쿠키에 토큰이 없습니다."),
+    EXPIRED_REFRESH_TOKEN(UNAUTHORIZED, "인증 정보가 만료되었습니다"),
+    INVALID_REFRESH_TOKEN(UNAUTHORIZED, "인증 정보가 유효하지 않습니다"),
 
 //  Study
     // 401 Unauthorized - 권한 없음

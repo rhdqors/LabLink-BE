@@ -3,8 +3,9 @@ package com.example.lablink.domain.user.service;
 import com.example.lablink.domain.company.entity.Company;
 import com.example.lablink.domain.user.dto.response.MyLabResponseDto;
 import com.example.lablink.domain.user.entity.*;
-import com.example.lablink.domain.user.repository.RefreshTokenRepository;
+import com.example.lablink.domain.auth.service.AuthService;
 import com.example.lablink.global.auth.EmailValidationService;
+import com.example.lablink.global.util.CookieUtil;
 import com.example.lablink.global.common.dto.request.SignupEmailCheckRequestDto;
 import com.example.lablink.global.exception.GlobalErrorCode;
 import com.example.lablink.global.exception.GlobalException;
@@ -66,7 +67,9 @@ class UserServiceTest {
     @Mock
     private HttpServletRequest httpServletRequest;
     @Mock
-    private RefreshTokenRepository refreshTokenRepository;
+    private AuthService authService;
+    @Mock
+    private CookieUtil cookieUtil;
 
     SignupRequestDto signupRequestDto = new SignupRequestDto(
         "test01@naver.com",
@@ -114,10 +117,13 @@ class UserServiceTest {
             HttpServletResponse response = new MockHttpServletResponse();
             given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
             given(passwordEncoder.matches(password, user.getPassword())).willReturn(true);
+            given(authService.generateAndStoreRefreshToken(user.getId(), UserRoleEnum.USER)).willReturn("rt-token");
             // when
             String result = userService.login(loginRequestDto, response);
             // then
             assertEquals("로그인 완료.", result);
+            verify(authService).generateAndStoreRefreshToken(user.getId(), UserRoleEnum.USER);
+            verify(cookieUtil).addRefreshTokenCookie(eq(response), eq("rt-token"), anyLong());
         }
         @Test
         @DisplayName("회원가입 - 이메일 사용 가능")
@@ -146,13 +152,13 @@ class UserServiceTest {
         @DisplayName("회원 탈퇴")
         void deleteUser() {
             // given
-            // new HttpServletResponse();가 아닌 동적 객체 생성?
             HttpServletResponse response = mock(HttpServletResponse.class);
             User user = new User();
             UserDetailsImpl userDetails = new UserDetailsImpl(user, user.getEmail());
             // when
             userService.deleteUser(userDetails, response);
             // then
+            verify(authService).logout(user.getId(), UserRoleEnum.USER, response);
             verify(userRepository).deleteUserAndData(user.getId());
             verify(response).setHeader(JwtUtil.AUTHORIZATION_HEADER, null);
         }

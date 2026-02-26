@@ -16,7 +16,9 @@ import com.example.lablink.domain.user.entity.UserRoleEnum;
 import com.example.lablink.global.common.dto.request.SignupEmailCheckRequestDto;
 import com.example.lablink.global.exception.GlobalErrorCode;
 import com.example.lablink.global.exception.GlobalException;
+import com.example.lablink.domain.auth.service.AuthService;
 import com.example.lablink.global.jwt.JwtUtil;
+import com.example.lablink.global.util.CookieUtil;
 import com.example.lablink.domain.study.service.StudyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,6 +36,8 @@ public class CompanyService {
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final AuthService authService;
+    private final CookieUtil cookieUtil;
     private final StudyService studyService;
     private final EmailValidationService emailValidationService;
     private final S3UploaderService s3UploaderService;
@@ -92,29 +96,9 @@ public class CompanyService {
 
         response.addHeader(JwtUtil.AUTHORIZATION_HEADER, jwtUtil.createCompanyToken(company));
 
-        // CSRF, JWT토큰 생성
-//        CsrfToken companyCsrfToken = csrfTokenRepository.generateToken(request);
-//        String companyToken = jwtUtil.createCompanyToken(company);
-
-        // 쿠키 생성 및 JWT토큰 추가
-//        Cookie cookie = new Cookie("Authorization", companyToken);
-//        cookie.setMaxAge(60 * 60 * 24); // 쿠키 유효 기간 (1일)x
-//        cookie.setPath("/"); // 전제api가 쿠키에 액세스 가능
-//        cookie.setHttpOnly(true); // XSS공격 방지 (악성코드?)
-////        cookie.setSecure(true); // HTTPS 사용 시 설정 (쿠키가 보안되지 않은 연결을 통해 전송되는 경우 탈취 방지)
-//        response.addCookie(cookie);
-
-        // 쿠키 생성 및 CSRF토큰 추가
-//        Cookie csrfCookie = new Cookie("XSRF-TOKEN", companyCsrfToken.getToken());
-//        csrfCookie.setMaxAge(60 * 60 * 24); // 쿠키 유효 기간 (1일)
-//        csrfCookie.setPath("/"); // 전제api가 쿠키에 액세스 가능
-//        csrfCookie.setHttpOnly(true); // XSS공격 방지 (악성코드?)
-////        csrfCookie.setSecure(true); // HTTPS 사용 시 설정 (쿠키가 보안되지 않은 연결을 통해 전송되는 경우 탈취 방지)
-//        response.addCookie(csrfCookie);
-
-//        // 세션 쿠키 생성 및 추가 > websecurity 수정 필요
-//        HttpSession session = request.getSession(true);
-//        session.setAttribute("Authorization", token);
+        // Refresh token 생성 및 쿠키에 저장
+        String refreshToken = authService.generateAndStoreRefreshToken(company.getId(), UserRoleEnum.BUSINESS);
+        cookieUtil.addRefreshTokenCookie(response, refreshToken, JwtUtil.RF_TOKEN_TIME / 1000);
     }
 
     // 기업 이메일 중복 체크
@@ -135,12 +119,15 @@ public class CompanyService {
     // 기업 회원 탈퇴
     @Transactional
     public void deleteCompany(CompanyDetailsImpl companyDetails, HttpServletResponse response) {
-        List<Study> studies = studyService.findAllCompanyStudy( companyDetails.getCompany());
+        Company company = companyDetails.getCompany();
+        List<Study> studies = studyService.findAllCompanyStudy(company);
         for (Study study1 : studies) {
             studyService.deleteStudy(study1.getId(), companyDetails);
         }
-        // 로그아웃 (헤더 null값 만들기)
-        companyRepository.delete(companyDetails.getCompany());
+        // RT revoke + 쿠키 클리어
+        authService.logout(company.getId(), UserRoleEnum.BUSINESS, response);
+        // 삭제 & AT 무효화
+        companyRepository.delete(company);
         response.setHeader(JwtUtil.AUTHORIZATION_HEADER, null);
     }
 

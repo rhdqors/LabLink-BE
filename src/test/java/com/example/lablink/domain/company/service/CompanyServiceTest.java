@@ -9,6 +9,7 @@ import com.example.lablink.domain.company.repository.CompanyRepository;
 import com.example.lablink.domain.company.security.CompanyDetailsImpl;
 import com.example.lablink.domain.study.entity.Study;
 import com.example.lablink.domain.study.service.StudyService;
+import com.example.lablink.domain.user.entity.UserRoleEnum;
 import com.example.lablink.global.S3Image.dto.S3ResponseDto;
 import com.example.lablink.global.S3Image.entity.S3Image;
 import com.example.lablink.global.S3Image.service.S3UploaderService;
@@ -16,7 +17,9 @@ import com.example.lablink.global.auth.EmailValidationService;
 import com.example.lablink.global.common.dto.request.SignupEmailCheckRequestDto;
 import com.example.lablink.global.exception.GlobalErrorCode;
 import com.example.lablink.global.exception.GlobalException;
+import com.example.lablink.domain.auth.service.AuthService;
 import com.example.lablink.global.jwt.JwtUtil;
+import com.example.lablink.global.util.CookieUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -55,6 +58,10 @@ class CompanyServiceTest {
     private StudyService studyService;
     @Mock
     private JwtUtil jwtUtil;
+    @Mock
+    private AuthService authService;
+    @Mock
+    private CookieUtil cookieUtil;
     @Mock
     private S3UploaderService s3UploaderService;
     @Mock
@@ -110,11 +117,14 @@ class CompanyServiceTest {
 
             given(companyRepository.findByEmail(email)).willReturn(Optional.of(company));
             given(passwordEncoder.matches(password, company.getPassword())).willReturn(true);
+            given(authService.generateAndStoreRefreshToken(company.getId(), UserRoleEnum.BUSINESS)).willReturn("rt-token");
 
             // When
             companyService.companyLogin(companyLoginRequestDto, response);
             // Then
             verify(response).addHeader(auth, jwtUtil.createCompanyToken(company));
+            verify(authService).generateAndStoreRefreshToken(company.getId(), UserRoleEnum.BUSINESS);
+            verify(cookieUtil).addRefreshTokenCookie(eq(response), eq("rt-token"), anyLong());
         }
 
         @Test
@@ -154,7 +164,8 @@ class CompanyServiceTest {
 
             // when
             companyService.deleteCompany(companyDetails, response);
-            // given
+            // then
+            verify(authService).logout(company.getId(), UserRoleEnum.BUSINESS, response);
             verify(studyService).deleteStudy(study.getId(), companyDetails);
             verify(companyRepository).delete(company);
             verify(response).setHeader(eq(JwtUtil.AUTHORIZATION_HEADER), isNull());
