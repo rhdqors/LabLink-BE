@@ -219,7 +219,6 @@ public class UserService {
 
     // 리프레시토큰 발급 메서드
     public String refreshAccessToken(UserDetailsImpl userDetails, HttpServletRequest request, HttpServletResponse response) {
-        log.info("========================= 리프레시토큰 발급 시작");
         User user = getUser(userDetails);
 
         // 클라이언트가 주는 모든 쿠키 가져오기
@@ -244,9 +243,7 @@ public class UserService {
         RefreshToken refreshToken = refreshTokenRepository.findByTokenIndex(refreshTokenIndex).orElseThrow(
                 () -> new GlobalException(GlobalErrorCode.EXPIRED_REFRESH_TOKEN));
 
-        log.info("========================= 리프레시토큰 : {}", refreshToken.getToken());
         String token = jwtUtil.createUserToken(user);
-        log.info("========================= 새 액세스토큰 : {}", token);
 
         return token;
     }
