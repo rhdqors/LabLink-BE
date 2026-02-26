@@ -37,7 +37,7 @@ public class JwtUtil {
     private static final String BEARER_PREFIX = "Bearer ";
     private static final long TOKEN_TIME = 60 * 60 * 1000L; // 1시간
 //    private static final long TOKEN_TIME = 60 * 1000L; // 테스트용 30초
-    public static final long RF_TOKEN_TIME = 7 * 24 * 60 * 60 * 1000L; // 7일 (밀리초 단위)
+    public static final long RF_TOKEN_TIME = 30 * 24 * 60 * 60 * 1000L; // 30일 (밀리초 단위)
 
     private final UserDetailsServiceImpl userDetailsService;       //스프링 시큐리티
     private final CompanyDetailsServiceImpl companyDetailsService;
@@ -93,16 +93,24 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String createUserRfToken(String userEmail, String nickname) {
+    public String createRefreshToken(String jti) {
         Date date = new Date();
-        return BEARER_PREFIX +
-            Jwts.builder()
-                .claim("email", userEmail)
-                .claim("nickname", nickname)
+        return Jwts.builder()
+                .setId(jti)
                 .setExpiration(new Date(date.getTime() + RF_TOKEN_TIME))
                 .setIssuedAt(date)
                 .signWith(key, signatureAlgorithm)
                 .compact();
+    }
+
+    public String extractJti(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+            return claims.getId();
+        } catch (JwtException e) {
+            log.debug("JTI 추출 실패: {}", e.getMessage());
+            return null;
+        }
     }
 
     // 기업 토큰 생성

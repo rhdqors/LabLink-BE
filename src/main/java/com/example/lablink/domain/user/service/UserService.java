@@ -1,10 +1,9 @@
 package com.example.lablink.domain.user.service;
 
 import com.example.lablink.domain.user.dto.request.UserNickNameRequestDto;
-import com.example.lablink.domain.user.entity.RefreshToken;
+import com.example.lablink.domain.auth.service.AuthService;
 import com.example.lablink.domain.user.entity.User;
 import com.example.lablink.domain.user.entity.UserRoleEnum;
-import com.example.lablink.domain.user.repository.RefreshTokenRepository;
 import com.example.lablink.domain.user.repository.UserQueryRepository;
 import com.example.lablink.domain.user.repository.UserRepository;
 import com.example.lablink.domain.user.security.UserDetailsImpl;
@@ -13,6 +12,7 @@ import com.example.lablink.global.common.dto.request.SignupEmailCheckRequestDto;
 import com.example.lablink.global.exception.GlobalErrorCode;
 import com.example.lablink.global.exception.GlobalException;
 import com.example.lablink.global.jwt.JwtUtil;
+import com.example.lablink.global.util.CookieUtil;
 
 import com.example.lablink.domain.user.dto.request.LoginRequestDto;
 import com.example.lablink.domain.user.dto.request.SignupRequestDto;
@@ -30,8 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
@@ -48,7 +46,8 @@ public class UserService {
     private final UserInfoService userInfoService;
     private final EntityManager em;
     private final EmailValidationService emailValidationService;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final AuthService authService;
+    private final CookieUtil cookieUtil;
     private final UserQueryRepository userQueryRepository;
 
     // 유저 회원가입
@@ -100,42 +99,11 @@ public class UserService {
         // Access token 생성 및 헤더에 추가
         response.addHeader(JwtUtil.AUTHORIZATION_HEADER, jwtUtil.createUserToken(user));
 
-        // Refresh token 생성 및 저장
-//        Long refreshTokenId = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
-//        RefreshToken refreshToken = new RefreshToken(refreshTokenId, jwtUtil.createUserRfToken(user.getEmail(), user.getNickName()));
-//        refreshTokenRepository.save(refreshToken);
-//
-//        // Refresh token을 쿠키에 저장
-//        String refreshTokenCookieValue = String.format("RefreshToken=%s; Max-Age=%d; Path=/; HttpOnly; SameSite=Lax",
-//                refreshTokenId, 7 * 24 * 60 * 60);
-//
-//        response.addHeader("Set-Cookie", refreshTokenCookieValue);
+        // Refresh token 생성 및 쿠키에 저장
+        String refreshToken = authService.generateAndStoreRefreshToken(user.getId(), UserRoleEnum.USER);
+        cookieUtil.addRefreshTokenCookie(response, refreshToken, JwtUtil.RF_TOKEN_TIME / 1000);
 
         return "로그인 완료.";
-
-        // CSRF, JWT토큰 생성
-//        CsrfToken userCsrfToken = csrfTokenRepository.generateToken(request);
-//        String userToken = jwtUtil.createUserToken(user);
-
-        // 쿠키 생성 및 JWT토큰 추가
-//        Cookie cookie = new Cookie("Authorization", userToken);
-//        cookie.setMaxAge(60 * 60 * 24); // 쿠키 유효 기간 (1일)
-//        cookie.setPath("/"); // 전제api가 쿠키에 액세스 가능
-//        cookie.setHttpOnly(true); // XSS공격 방지 (악성코드?)
-////        cookie.setSecure(true); // HTTPS 사용 시 설정 (쿠키가 보안되지 않은 연결을 통해 전송되는 경우 탈취 방지)
-//        response.addCookie(cookie);
-
-        // 쿠키 생성 및 CSRF토큰 추가
-//        Cookie csrfCookie = new Cookie("XSRF-TOKEN", userCsrfToken.getToken());
-//        csrfCookie.setMaxAge(60 * 60 * 24); // 쿠키 유효 기간 (1일)
-//        csrfCookie.setPath("/"); // 전제api가 쿠키에 액세스 가능
-//        csrfCookie.setHttpOnly(true); // XSS공격 방지 (악성코드?)
-////        csrfCookie.setSecure(true); // HTTPS 사용 시 설정 (쿠키가 보안되지 않은 연결을 통해 전송되는 경우 탈취 방지)
-//        response.addCookie(csrfCookie);
-
-//        // 세션 쿠키 생성 및 추가 > websecurity 수정 필요
-//        HttpSession session = request.getSession(true);
-//        session.setAttribute("Authorization", token);
     }
 
     // 유저 이메일 중복 체크
@@ -165,8 +133,11 @@ public class UserService {
     public String deleteUser(UserDetailsImpl userDetails, HttpServletResponse response) {
         long start = System.currentTimeMillis();
 
-        // 삭제 & 로그아웃 (헤더 null값 만들기)
-        userRepository.deleteUserAndData(userDetails.getUser().getId());
+        User user = userDetails.getUser();
+        // RT revoke + 쿠키 클리어
+        authService.logout(user.getId(), UserRoleEnum.USER, response);
+        // 삭제 & AT 무효화
+        userRepository.deleteUserAndData(user.getId());
         response.setHeader(JwtUtil.AUTHORIZATION_HEADER, null);
 
         long end = System.currentTimeMillis();
@@ -217,36 +188,6 @@ public class UserService {
         return query.getResultList();
     }
 
-    // 리프레시토큰 발급 메서드
-    public String refreshAccessToken(UserDetailsImpl userDetails, HttpServletRequest request, HttpServletResponse response) {
-        User user = getUser(userDetails);
-
-        // 클라이언트가 주는 모든 쿠키 가져오기
-        Cookie[] cookies = request.getCookies();
-        if (cookies == null) {
-            throw new GlobalException(GlobalErrorCode.EXPIRED_REFRESH_TOKEN);
-        }
-
-        // 쿠키 중 RefreshToken 가져오기
-        Long refreshTokenIndex = null;
-        for (Cookie cookie : cookies) {
-            if (cookie.getName().equals("RefreshToken")) {
-                refreshTokenIndex = Long.parseLong(cookie.getValue());
-                break;
-            }
-        }
-
-        if (refreshTokenIndex == null) {
-            throw new GlobalException(GlobalErrorCode.EXPIRED_REFRESH_TOKEN);
-        }
-
-        RefreshToken refreshToken = refreshTokenRepository.findByTokenIndex(refreshTokenIndex).orElseThrow(
-                () -> new GlobalException(GlobalErrorCode.EXPIRED_REFRESH_TOKEN));
-
-        String token = jwtUtil.createUserToken(user);
-
-        return token;
-    }
 
     public User getUserByNickname(String nickName) {
         return userRepository.findByNickName(nickName).orElseThrow(() -> new GlobalException(GlobalErrorCode.USER_NOT_FOUND));
