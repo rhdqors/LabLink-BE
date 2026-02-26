@@ -46,10 +46,8 @@ public class KakaoService {
 
     @Transactional
     public void kakaoLogin(String code, HttpServletResponse response) throws JsonProcessingException {
-        log.info("code : " + code);
         // 1. "인가 코드"로 "액세스 토큰" 요청
         String accessToken = getToken(code);
-        log.info("accessToken : " + accessToken);
 
         // 2. 토큰으로 카카오 API 호출 : "액세스 토큰"으로 "카카오 사용자 정보" 가져오기
         KakaoUserInfoDto kakaoUserInfo = getKakaoUserInfo(accessToken);
