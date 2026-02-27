@@ -30,6 +30,8 @@ public enum GlobalErrorCode {
     DUPLICATE_EMAIL(CONFLICT, "중복된 이메일이 존재합니다"),
     EXPIRED_REFRESH_TOKEN(UNAUTHORIZED, "인증 정보가 만료되었습니다"),
     INVALID_REFRESH_TOKEN(UNAUTHORIZED, "인증 정보가 유효하지 않습니다"),
+    UNSUPPORTED_OAUTH_PROVIDER(BAD_REQUEST, "지원하지 않는 인증 제공자입니다"),
+    INVALID_OAUTH_STATE(BAD_REQUEST, "잘못된 인증 요청입니다"),
 
 //  Study
     // 401 Unauthorized - 권한 없음

@@ -63,6 +63,7 @@ public class WebSecurityConfig {
 
         http.authorizeRequests()
                 .antMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
+                .antMatchers("/auth/oauth/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/users/signup", "/users/signup/**", "/users/login").permitAll()
                 .antMatchers(HttpMethod.POST, "/companies/signup", "/companies/signup/**", "/companies/login").permitAll()
                 .antMatchers(HttpMethod.GET, "/users/kakao/login", "/users/google/login").permitAll()
