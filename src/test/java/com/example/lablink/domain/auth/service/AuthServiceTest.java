@@ -8,9 +8,13 @@ import com.example.lablink.domain.user.entity.UserRoleEnum;
 import com.example.lablink.domain.user.repository.RefreshTokenRepository;
 import com.example.lablink.domain.user.repository.UserRepository;
 import com.example.lablink.global.exception.GlobalException;
+import com.example.lablink.domain.oauth.client.OAuthClient;
+import com.example.lablink.domain.oauth.service.OAuthStateStore;
+import com.example.lablink.domain.user.service.UserInfoService;
 import com.example.lablink.global.jwt.JwtUtil;
 import com.example.lablink.global.util.CookieUtil;
 import org.junit.jupiter.api.DisplayName;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import java.util.List;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -53,6 +58,18 @@ class AuthServiceTest {
 
     @Mock
     private CookieUtil cookieUtil;
+
+    @Mock
+    private List<OAuthClient> oAuthClients;
+
+    @Mock
+    private OAuthStateStore oAuthStateStore;
+
+    @Mock
+    private UserInfoService userInfoService;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @Nested
     @DisplayName("RefreshToken Entity")

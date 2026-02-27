@@ -1,8 +1,9 @@
 package com.example.lablink.domain.user.google.controller;
 
-import com.example.lablink.domain.user.google.service.OauthService;
+import com.example.lablink.domain.auth.service.AuthService;
+import com.example.lablink.domain.oauth.enums.OAuthProvider;
+import com.example.lablink.global.jwt.JwtUtil;
 import com.example.lablink.global.message.ResponseMessage;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,12 +17,16 @@ import javax.servlet.http.HttpServletResponse;
 @Slf4j
 @RequiredArgsConstructor
 public class OauthController {
-    private final OauthService oauthService;
+
+    private final AuthService authService;
 
     @GetMapping("/users/google/login")
-    public ResponseEntity<?> googleLogin(@RequestParam String code, @RequestParam String scope, HttpServletResponse response) throws JsonProcessingException {
-        oauthService.googleLogin(code, scope, response);
+    public ResponseEntity<?> googleLogin(
+            @RequestParam String code,
+            @RequestParam(required = false) String scope,
+            HttpServletResponse response) {
+        String accessToken = authService.processOAuthLogin(OAuthProvider.GOOGLE, code, null, response);
+        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, accessToken);
         return ResponseMessage.SuccessResponse("로그인 성공!", "");
     }
-
 }
