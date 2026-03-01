@@ -2,43 +2,47 @@
 <configuration scan="true" scanPeriod="10 seconds">
 
     <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
-<!--로그 파일 저장 위치-->
-    <property name="LOGS_PATH" value="/home/ubuntu/app/logs/"/>
-<!--    <property name="LOGS_PATH" value="\logs/"/>-->
 
-<!-- 지정한 일자/시간마다 파일을 생성하면서 로그를 찍는다-->
-<appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-        <level>info</level>  <!-- 로그 레벨 지정하는 부분-->
-    </filter>
+    <property name="LOG_PATTERN" value="[%d{yyyy-MM-dd HH:mm:ss}:%-3relative]  %clr(%-5level) %clr(${PID:-}){magenta} %clr(---){faint} %clr([%15.15thread]){faint} %clr(%-40.40logger{36}){cyan} %clr(:){faint} %msg%n"/>
 
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-        <!-- rollover daily -->
-        <!-- 일자까지 지정했기때문에 일자마다 로그 파일이 생성된다.-->
-        <fileNamePattern>${LOGS_PATH}log-%d{yyyy-MM-dd-HH}.%i.txt</fileNamePattern>
-        <timeBasedFileNamingAndTriggeringPolicy
-                class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-            <!-- or whenever the file size reaches 100MB -->
-            <maxFileSize>10MB</maxFileSize>
-        </timeBasedFileNamingAndTriggeringPolicy>
-        <!-- 로그 파일을 몇 개 생성할 건지-->
-        <maxHistory>30</maxHistory>
-    </rollingPolicy>
+    <!-- 콘솔 Appender (공통) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
 
-    <encoder>
-        <!-- 찍어줄 로그의 형태, 시간과 로그가 찍힌 메소드, 메세지가 출력된다.-->
-        <pattern>[%d{yyyy-MM-dd HH:mm:ss}:%-3relative]  %clr(%-5level) %clr(${PID:-}){magenta} %clr(---){faint} %clr([%15.15thread]){faint} %clr(%-40.40logger{36}){cyan} %clr(:){faint} %msg%n</pattern>
-    </encoder>
+    <!-- local: 콘솔 출력만 -->
+    <springProfile name="local">
+        <root level="info">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
 
-</appender>
-<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-        <!-- 찍어줄 로그의 형태, 시간과 로그가 찍힌 메소드, 메세지가 출력된다.-->
-        <pattern>[%d{yyyy-MM-dd HH:mm:ss}:%-3relative]  %clr(%-5level) %clr(${PID:-}){magenta} %clr(---){faint} %clr([%15.15thread]){faint} %clr(%-40.40logger{36}){cyan} %clr(:){faint} %msg%n</pattern>
-    </encoder>
-</appender>
-<root level="info">
-    <appender-ref ref="ROLLING"/>
-    <appender-ref ref="CONSOLE"/>
-</root>
+    <!-- prod: 파일 + 콘솔 -->
+    <springProfile name="prod">
+        <property name="LOG_PATH" value="${LOG_PATH:-/home/ubuntu/app/logs}"/>
+
+        <appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>info</level>
+            </filter>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/log-%d{yyyy-MM-dd-HH}.%i.txt</fileNamePattern>
+                <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                    <maxFileSize>10MB</maxFileSize>
+                </timeBasedFileNamingAndTriggeringPolicy>
+                <maxHistory>30</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <root level="info">
+            <appender-ref ref="ROLLING"/>
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
 </configuration>
